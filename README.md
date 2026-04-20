@@ -34,7 +34,6 @@ docker-compose up --build
 # Client App:    http://localhost:3000
 # Admin App:     http://localhost:3001
 # Backend API:   http://localhost:8080
-# PostgreSQL:    localhost:5432
 ```
 
 ## Demo Credentials
