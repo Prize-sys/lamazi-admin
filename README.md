@@ -65,7 +65,7 @@ go run main.go
 cd client-frontend
 npm install
 REACT_APP_API_URL=http://localhost:8080/api npm start
-# Runs on http://localhost:3000
+# Runs on http://localhost:3000      //https://back.lamazi.com production
 ```
 
 ### Admin Frontend

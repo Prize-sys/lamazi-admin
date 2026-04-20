@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        VITE_API_URL: https://admin.lamazi.com
+        VITE_API_URL: https://back.lamazi.com
     container_name: lamazi-frontend
     ports:
       - "3000:80"
