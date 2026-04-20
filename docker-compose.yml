@@ -6,7 +6,7 @@ services:
       context: .
       args:
         VITE_API_URL: https://back.lamazi.com
-    container_name: lamazi-frontend
+    container_name: lamazi-admin
     ports:
       - "3000:80"
     restart: always

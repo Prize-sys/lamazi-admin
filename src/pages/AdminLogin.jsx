@@ -39,7 +39,7 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Admin Email</label>
-              <input className="form-input" style={{ width: '100%' }} type="email" placeholder="admin@mindcare.com"
+              <input className="form-input" style={{ width: '100%' }} type="email" placeholder="admin@lamazi.com"
                 value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
             </div>
             <div style={{ marginBottom: 20 }}>

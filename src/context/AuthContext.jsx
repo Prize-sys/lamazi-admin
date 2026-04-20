@@ -11,7 +11,13 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await adminAPI.login({ email, password });
-    const { token, user } = res.data;
+    const { token, role, user } = res.data;
+
+    // Guard — make sure the account that logged in is actually an admin
+    if (role !== 'admin') {
+      throw new Error('Access denied. Admin account required.');
+    }
+
     localStorage.setItem('mc_admin_token', token);
     localStorage.setItem('mc_admin_user', JSON.stringify(user));
     setAdmin(user);
@@ -24,7 +30,11 @@ export function AuthProvider({ children }) {
     setAdmin(null);
   };
 
-  return <AuthContext.Provider value={{ admin, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ admin, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);
