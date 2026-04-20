@@ -1,4 +1,4 @@
-# MindCare — Mental Health Therapy Platform
+# Lamazi — Mental Health Therapy Platform
 
 A full-stack mental health therapy booking platform with three separate projects sharing one Go backend.
 
@@ -21,7 +21,7 @@ mindcare/
 
 ```bash
 # 1. Clone and enter project
-cd mindcare
+cd lamazi-admin
 
 # 2. Copy environment file
 cp .env.example .env
@@ -54,12 +54,9 @@ docker-compose up --build
 cd backend
 # Install dependencies
 go mod download
-# Set DATABASE_URL env var pointing to your PostgreSQL
-export DATABASE_URL="postgres://mindcare:mindcare123@localhost:5432/mindcare?sslmode=disable"
+
 export JWT_SECRET="dev-secret"
-# Run schema
-psql $DATABASE_URL -f db/schema.sql
-psql $DATABASE_URL -f db/seed.sql
+
 # Start server
 go run main.go
 ```

@@ -19,7 +19,7 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
-        <h1>MindCare Admin</h1>
+        <h1>Lamazi Admin</h1>
         <p>Platform Management Dashboard</p>
       </div>
       <nav className="sidebar-nav">

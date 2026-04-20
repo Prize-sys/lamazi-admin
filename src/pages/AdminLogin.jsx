@@ -24,7 +24,7 @@ export default function AdminLogin() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ECFDF5 0%, #EFF6FF 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 28, fontWeight: 700, color: 'var(--primary)', marginBottom: 6 }}>MindCare Admin</div>
+          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 28, fontWeight: 700, color: 'var(--primary)', marginBottom: 6 }}>Lamazi Admin</div>
           <p style={{ color: 'var(--gray-500)', fontSize: 14 }}>Platform Management Dashboard</p>
         </div>
         <div className="card" style={{ padding: 28 }}>
