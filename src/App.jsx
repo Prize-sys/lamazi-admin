@@ -20,6 +20,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
@@ -27,7 +29,6 @@ export default function App() {
           <Route path="/payouts" element={<PrivateRoute><Payouts /></PrivateRoute>} />
           <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
           <Route path="/audit-logs" element={<PrivateRoute><AuditLogs /></PrivateRoute>} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
