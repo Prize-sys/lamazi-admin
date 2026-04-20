@@ -53,7 +53,7 @@ export default function AdminLogin() {
             </button>
           </form>
           <div style={{ marginTop: 16, padding: 12, background: 'var(--gray-50)', borderRadius: 8, fontSize: 12, color: 'var(--gray-500)' }}>
-            <strong>Demo:</strong> admin@mindcare.com / admin123
+            <strong>Demo:</strong> admin@lamazi.com / admin123
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ A full-stack mental health therapy booking platform with three separate projects
 ## Architecture
 
 ```
-mindcare/
+lamazi/
 ├── backend/              # Go REST API (shared by both frontends)
 │   ├── handlers/         # Route handlers
 │   ├── middleware/        # JWT auth middleware
