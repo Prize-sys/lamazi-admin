@@ -9,7 +9,7 @@ RUN npm ci && npm cache clean --force
 
 COPY . .
 
-# Vite env variable (NOT REACT_APP)
+# Vite env variable
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
