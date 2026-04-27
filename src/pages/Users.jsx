@@ -1,153 +1,157 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Sidebar from '../components/Sidebar';
+import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../api';
 
-const COLORS = ['#6366F1','#EC4899','#F59E0B','#10B981','#3B82F6','#8B5CF6'];
-const getColor = name => COLORS[(name || 'A').charCodeAt(0) % COLORS.length];
-const getInitials = name => (name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-
-const DEMO_USERS = [
-  { id: '1', full_name: 'John Doe', email: 'john.doe@email.com', phone: '+1234567890', role: 'client', status: 'active', created_at: '2025-10-15' },
-  { id: '2', full_name: 'Jane Smith', email: 'jane.smith@email.com', phone: '+1234567891', role: 'client', status: 'active', created_at: '2025-11-01' },
-];
-const DEMO_THERAPISTS = [
-  { id: '3', full_name: 'Dr. Sarah Johnson', email: 'sarah.j@therapist.com', phone: '+1234567892', role: 'therapist', status: 'active', created_at: '2025-08-20' },
-  { id: '4', full_name: 'Michael Chen', email: 'michael.c@therapist.com', phone: '+1234567893', role: 'therapist', status: 'active', created_at: '2025-09-10' },
-  { id: '5', full_name: 'Dr. New Therapist', email: 'new.therapist@email.com', phone: '+1234567894', role: 'therapist', status: 'pending', created_at: '2025-12-08' },
-];
+const TIER_COLORS = { gold: '#D97706', silver: '#64748B', bronze: '#92400E' };
+const TIER_BG    = { gold: '#FEF3C7', silver: '#F1F5F9', bronze: '#FEF9EE' };
 
 export default function Users() {
-  const [users, setUsers] = useState([]);
-  const [therapists, setTherapists] = useState([]);
-  const [counts, setCounts] = useState({ clients: 0, therapists: 0, pending: 0 });
+  const [data, setData]       = useState({ users: [], therapists: [] });
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [menuOpen, setMenuOpen] = useState(null);
+  const [search, setSearch]   = useState('');
+  const [tab, setTab]         = useState('all');
+  const [actionLoading, setActionLoading] = useState('');
 
-  const load = useCallback(() => {
-    adminAPI.users({ q: search, role: roleFilter, status: statusFilter })
-      .then(r => {
-        setUsers(r.data.users || []);
-        setTherapists(r.data.therapists || []);
-        setCounts({ clients: r.data.total_clients || 0, therapists: r.data.total_therapists || 0, pending: r.data.pending_approval || 0 });
-      })
-      .catch(() => {
-        setUsers(DEMO_USERS);
-        setTherapists(DEMO_THERAPISTS);
-        setCounts({ clients: 2, therapists: 3, pending: 1 });
-      })
+  const load = (q = '') => {
+    setLoading(true);
+    adminAPI.getUsers({ q, role: tab === 'all' ? '' : tab })
+      .then(res => setData(res.data))
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [search, roleFilter, statusFilter]);
+  };
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(search); }, [tab]);
 
-  const handleSuspend = async (id, role) => {
+  const handleSearch = e => {
+    setSearch(e.target.value);
+    if (e.target.value.length === 0 || e.target.value.length > 2) load(e.target.value);
+  };
+
+  const handleStatusToggle = async (id, currentStatus, isTherapist) => {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    setActionLoading(id);
     try {
-      if (role === 'therapist') await adminAPI.updateTherapistStatus(id, 'suspended');
-      else await adminAPI.updateUserStatus(id, 'suspended');
-      load();
-    } catch { alert('Failed to update status'); }
-    setMenuOpen(null);
+      if (isTherapist) await adminAPI.updateTherapistStatus(id, { status: newStatus });
+      else             await adminAPI.updateUserStatus(id, { status: newStatus });
+      load(search);
+    } catch {} finally { setActionLoading(''); }
   };
 
   const allRows = [
-    ...(roleFilter === 'therapist' ? [] : users),
-    ...(roleFilter === 'client' ? [] : therapists),
-  ].filter(u => {
-    if (statusFilter !== 'all' && u.status !== statusFilter) return false;
-    if (search && !u.full_name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+    ...data.users.map(u => ({ ...u, isTherapist: false })),
+    ...data.therapists.map(t => ({ ...t, role: 'therapist', isTherapist: true })),
+  ];
+
+  const rows = allRows.filter(u =>
+    tab === 'all' ||
+    (tab === 'client'    && u.role === 'client') ||
+    (tab === 'therapist' && u.role === 'therapist')
+  );
 
   return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
-        <div className="top-bar">
-          <h2 style={{ fontSize: 16, fontWeight: 700 }}>Users</h2>
-        </div>
-        <div className="page-content">
-          <div className="section-title">User Management</div>
-          <div className="section-sub">Manage clients, therapists, and their accounts</div>
+    <div style={{ padding: 28 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>Users</h1>
+      <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>Manage clients and therapists</p>
 
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-            <input className="form-input" placeholder="🔍  Search by name or email..." value={search}
-              onChange={e => setSearch(e.target.value)} style={{ flex: 1 }} />
-            <button className="btn btn-outline">⚙ Filters</button>
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 24 }}>
+        {[
+          { label: 'Total Clients',     value: data.total_clients    || 0, color: '#3B82F6' },
+          { label: 'Total Therapists',  value: data.total_therapists || 0, color: '#7C3AED' },
+          { label: 'Pending Approval',  value: data.pending_approval || 0, color: '#D97706' },
+        ].map(s => (
+          <div key={s.label} style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '16px 18px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 5 }}>{s.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
           </div>
+        ))}
+      </div>
 
-          <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-            <select className="form-input" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ width: 180 }}>
-              <option value="all">All Roles</option>
-              <option value="client">Clients</option>
-              <option value="therapist">Therapists</option>
-            </select>
-            <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 180 }}>
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18, alignItems: 'center' }}>
+        <input
+          placeholder="Search name or email..."
+          value={search}
+          onChange={handleSearch}
+          style={{ flex: 1, padding: '9px 14px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 13, outline: 'none' }}
+        />
+        {['all', 'client', 'therapist'].map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            background: tab === t ? '#3B82F6' : '#fff',
+            color: tab === t ? '#fff' : '#475569',
+            border: `1px solid ${tab === t ? '#3B82F6' : '#E2E8F0'}`,
+          }}>
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20, marginTop: 16 }}>
-            {[{ label: 'Total Clients', val: counts.clients }, { label: 'Total Therapists', val: counts.therapists }, { label: 'Pending Approval', val: counts.pending }].map(({ label, val }) => (
-              <div key={label} className="card" style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Space Grotesk, sans-serif' }}>{val}</div>
-                <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>{label}</div>
-              </div>
+      {/* Table */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              {['Name', 'Email', 'Phone', 'Role', 'Tier', 'Status', 'Joined', 'Action'].map(h => (
+                <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: 700, color: '#64748B', fontSize: 12 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#94A3B8' }}>Loading...</td></tr>
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#94A3B8' }}>No users found</td></tr>
+            ) : rows.map((u, i) => (
+              <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9', background: i % 2 === 0 ? '#fff' : '#FAFAFA' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 600, color: '#0F172A' }}>{u.full_name}</td>
+                <td style={{ padding: '12px 14px', color: '#475569' }}>{u.email}</td>
+                <td style={{ padding: '12px 14px', color: '#64748B' }}>{u.phone || '—'}</td>
+                <td style={{ padding: '12px 14px' }}>
+                  <span style={{
+                    background: u.role === 'therapist' ? '#F3E8FF' : '#EFF6FF',
+                    color:      u.role === 'therapist' ? '#7C3AED'  : '#3B82F6',
+                    padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                  }}>
+                    {u.role}
+                  </span>
+                </td>
+                <td style={{ padding: '12px 14px' }}>
+                  {u.isTherapist && u.membership_tier ? (
+                    <span style={{ background: TIER_BG[u.membership_tier], color: TIER_COLORS[u.membership_tier], padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>
+                      {u.membership_tier}
+                    </span>
+                  ) : <span style={{ color: '#CBD5E1' }}>—</span>}
+                </td>
+                <td style={{ padding: '12px 14px' }}>
+                  <span style={{
+                    background: u.status === 'active' ? '#DCFCE7' : u.status === 'pending' ? '#FEF9C3' : '#FEF2F2',
+                    color:      u.status === 'active' ? '#16A34A' : u.status === 'pending' ? '#CA8A04' : '#DC2626',
+                    padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                  }}>
+                    {u.status}
+                  </span>
+                </td>
+                <td style={{ padding: '12px 14px', color: '#94A3B8', fontSize: 12 }}>
+                  {new Date(u.created_at).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '12px 14px' }}>
+                  <button
+                    onClick={() => handleStatusToggle(u.id, u.status, u.isTherapist)}
+                    disabled={actionLoading === u.id}
+                    style={{
+                      padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none',
+                      background: u.status === 'active' ? '#FEF2F2' : '#F0FDF4',
+                      color:      u.status === 'active' ? '#DC2626' : '#16A34A',
+                    }}
+                  >
+                    {actionLoading === u.id ? '...' : u.status === 'active' ? 'Suspend' : 'Activate'}
+                  </button>
+                </td>
+              </tr>
             ))}
-          </div>
-
-          <div className="card">
-            {loading ? <div className="spinner" /> : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>User</th><th>Contact</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allRows.map(u => (
-                    <tr key={u.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div className="avatar" style={{ background: getColor(u.full_name) }}>{getInitials(u.full_name)}</div>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{u.full_name} {u.status !== 'pending' && '✓'}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: 12 }}>✉ {u.email}</div>
-                        <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>📞 {u.phone || 'N/A'}</div>
-                      </td>
-                      <td><span className={'badge badge-' + u.role}>{u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
-                      <td><span className={'badge badge-' + u.status}>{u.status.charAt(0).toUpperCase() + u.status.slice(1)}</span></td>
-                      <td style={{ fontSize: 13 }}>{u.created_at ? new Date(u.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
-                      <td>
-                        <div style={{ position: 'relative' }}>
-                          <button onClick={() => setMenuOpen(menuOpen === u.id ? null : u.id)}
-                            style={{ background: 'none', padding: '4px 8px', borderRadius: 4, fontSize: 18, color: 'var(--gray-500)' }}>⋮</button>
-                          {menuOpen === u.id && (
-                            <div style={{ position: 'absolute', right: 0, top: 28, background: 'white', border: '1px solid var(--gray-200)', borderRadius: 8, boxShadow: 'var(--shadow)', zIndex: 50, minWidth: 160 }}>
-                              <button onClick={() => setMenuOpen(null)} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', fontSize: 13 }}>View Details</button>
-                              <button onClick={() => setMenuOpen(null)} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', fontSize: 13 }}>Send Message</button>
-                              <button onClick={() => handleSuspend(u.id, u.role)} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', fontSize: 13, color: 'var(--red)' }}>🚫 Suspend Account</button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </main>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -1,52 +1,74 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV = [
-  { path: '/dashboard', label: 'Overview', icon: '▦' },
-  { path: '/users', label: 'Users', icon: '👥' },
-  { path: '/verification', label: 'Verification', icon: '✓' },
-  { path: '/payouts', label: 'Payouts', icon: '$' },
-  { path: '/analytics', label: 'Analytics', icon: '📊' },
-  { path: '/audit-logs', label: 'Audit Logs', icon: '📋' },
+  { to: '/',            label: 'Dashboard',    icon: '📊' },
+  { to: '/users',       label: 'Users',        icon: '👥' },
+  { to: '/verification',label: 'Verification', icon: '✔️'  },
+  { to: '/bookings',    label: 'Bookings',     icon: '📅' },
+  { to: '/payouts',     label: 'Payouts',      icon: '💸' },
+  { to: '/refunds',     label: 'Refunds',      icon: '↩️'  },
+  { to: '/analytics',   label: 'Analytics',    icon: '📈' },
+  { to: '/audit-logs',  label: 'Audit Logs',   icon: '🔍' },
 ];
 
 export default function Sidebar() {
-  const { admin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-logo">
-        <h1>Lamazi Admin</h1>
-        <p>Platform Management Dashboard</p>
+    <aside style={{
+      width: 220, minHeight: '100vh', background: '#0F172A',
+      display: 'flex', flexDirection: 'column', flexShrink: 0,
+    }}>
+      {/* Logo */}
+      <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E293B' }}>
+        <div style={{ color: '#3B82F6', fontWeight: 800, fontSize: 20, letterSpacing: -0.5 }}>Lamazi</div>
+        <div style={{ color: '#475569', fontSize: 11, marginTop: 2 }}>Admin Dashboard</div>
       </div>
-      <nav className="sidebar-nav">
-        {NAV.map(({ path, label, icon }) => (
-          <button key={path}
-            className={'nav-link' + (pathname === path ? ' active' : '')}
-            onClick={() => navigate(path)}
-            style={{ width: '100%', textAlign: 'left', background: 'none', cursor: 'pointer' }}>
-            <span style={{ fontSize: 16, width: 22, display: 'inline-block' }}>{icon}</span>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+        {NAV.map(({ to, label, icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            style={({ isActive }) => ({
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 20px', fontSize: 14, fontWeight: 500,
+              color: isActive ? '#F8FAFC' : '#94A3B8',
+              background: isActive ? '#1E3A5F' : 'transparent',
+              borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
+              textDecoration: 'none', transition: 'all 0.15s',
+            })}
+          >
+            <span style={{ fontSize: 16 }}>{icon}</span>
             {label}
-          </button>
+          </NavLink>
         ))}
       </nav>
-      <div className="sidebar-user">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <div className="avatar" style={{ background: 'var(--primary)' }}>
-            {(admin?.full_name || 'AU').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{admin?.full_name || 'Admin User'}</div>
-            <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>Super Admin</div>
-          </div>
+
+      {/* User / Logout */}
+      <div style={{ padding: '16px 20px', borderTop: '1px solid #1E293B' }}>
+        <div style={{ color: '#CBD5E1', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+          {user?.full_name || 'Admin'}
         </div>
-        <button onClick={logout} style={{ width: '100%', padding: '7px 12px', borderRadius: 6, border: '1px solid var(--gray-200)', background: 'white', fontSize: 13, color: 'var(--gray-700)', cursor: 'pointer' }}>
+        <div style={{ color: '#475569', fontSize: 11, marginBottom: 12 }}>{user?.email}</div>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%', padding: '8px 0', borderRadius: 6,
+            background: '#1E293B', color: '#94A3B8', border: 'none',
+            fontSize: 13, cursor: 'pointer', fontWeight: 500,
+          }}
+        >
           Sign Out
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
